@@ -1,0 +1,29 @@
+{
+  "canisters": {
+    "indexer_backend": {
+      "candid": "src/indexer_backend/indexer_backend.did",
+      "package": "indexer_backend",
+      "type": "rust"
+    },
+    "indexer_frontend": {
+      "dependencies": [
+        "indexer_backend"
+      ],
+      "frontend": {
+        "entrypoint": "src/indexer_frontend/src/index.html"
+      },
+      "source": [
+        "src/indexer_frontend/assets",
+        "dist/indexer_frontend/"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "version": 1
+}
