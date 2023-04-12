@@ -11,7 +11,7 @@ use ic_web3::Transport;
 use ic_web3::Web3;
 use ic_web3::{contract::Contract, types::Address};
 
-const WS_ENDPOINT: &str = "https://mainnet.infura.io/v3/TEST";
+const WS_ENDPOINT: &str = "https://mainnet.infura.io/v3/";
 const BATCH_SIZE: u64 = 10;
 
 pub struct LogFinder {

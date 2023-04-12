@@ -7,5 +7,4 @@ type HttpResponse = record {
 type TransformArgs = record { context : vec nat8; response : HttpResponse };
 service : {
     "event_amount" : (int) -> (int) query;
-    transform : (TransformArgs) -> (HttpResponse) query;
 };
