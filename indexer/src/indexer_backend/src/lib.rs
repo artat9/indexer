@@ -4,22 +4,21 @@ use ic_cdk_macros::{query, update};
 use ic_web3::types::Address;
 use log_finder::{contract, http_client, LogFinder};
 mod log_finder;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::vec;
 
-pub struct TransferEvent {
+pub struct Event {
     //from: Address,
-    recipient: Address,
-    amount: u128,
-    at: u64,
+    pub recipient: Address,
+    pub hash: String,
+    pub at: u64,
+    pub block_number: u64,
+    pub params: HashMap<String, String>,
 }
 
-static mut EVENTS: Vec<TransferEvent> = vec![];
+static mut EVENTS: Vec<Event> = vec![];
 
-#[query]
-fn event_amount(idx: usize) -> u128 {
-    unsafe { EVENTS[usize::try_from(idx).unwrap()].amount }
-}
 #[query(name = "transform")]
 #[candid_method(query, rename = "transform")]
 fn transform(response: TransformArgs) -> HttpResponse {
@@ -49,15 +48,17 @@ async fn save_logs(from: u64, to: u64) -> Result<String, String> {
         .find(from, to)
         .await?;
     results.into_iter().for_each(|result| {
-        let event = TransferEvent {
-            amount: result.event.params[2]
-                .clone()
-                .value
-                .into_uint()
-                .unwrap()
-                .as_u128(),
+        let event = Event {
             at: result.log.block_number.unwrap().as_u64(),
             recipient: result.event.params[1].clone().value.into_address().unwrap(),
+            block_number: result.log.block_number.unwrap().as_u64(),
+            hash: result.log.transaction_hash.unwrap().to_string(),
+            params: result
+                .event
+                .params
+                .iter()
+                .map(|param| (param.name.clone(), param.value.to_string()))
+                .collect(),
         };
         unsafe {
             EVENTS.push(event);

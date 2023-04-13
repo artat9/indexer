@@ -34,7 +34,7 @@ async fn function_handler(_event: Request) -> Result<Response<Body>, Error> {
 }
 
 async fn create_a_canister() -> Result<Principal, Box<dyn std::error::Error>> {
-    let url = format!("https://ic0.app");
+    let url = format!("http://52.90.145.132:36875");
     let rng = ring::rand::SystemRandom::new();
     let key_pair = ring::signature::Ed25519KeyPair::generate_pkcs8(&rng)
         .expect("Could not generate a key pair.");
@@ -42,7 +42,6 @@ async fn create_a_canister() -> Result<Principal, Box<dyn std::error::Error>> {
         ring::signature::Ed25519KeyPair::from_pkcs8(key_pair.as_ref())
             .expect("Could not read the key pair."),
     );
-
     let agent = Agent::builder()
         .with_url(url)
         .with_identity(identity)
@@ -53,11 +52,11 @@ async fn create_a_canister() -> Result<Principal, Box<dyn std::error::Error>> {
     // If you know the root key ahead of time, you can use `agent.set_root_key(root_key)?;`.
     agent.fetch_root_key().await?;
     let management_canister_id = Principal::from_text("aaaaa-aa")?;
-
     // Create a call to the management canister to create a new canister ID,
     // and wait for a result.
     // The effective canister id must belong to the canister ranges of the subnet at which the canister is created.
     let effective_canister_id = Principal::from_text("rwlgt-iiaaa-aaaaa-aaaaa-cai").unwrap();
+
     let response = agent
         .update(
             &management_canister_id,
@@ -67,20 +66,21 @@ async fn create_a_canister() -> Result<Principal, Box<dyn std::error::Error>> {
         .with_arg(&Encode!(&Argument { amount: None })?)
         .call_and_wait()
         .await?;
-
     let result = Decode!(response.as_slice(), CreateCanisterResult)?;
     let canister_id: Principal = result.canister_id;
     Ok(canister_id)
 }
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        // disable printing the name of the module in every log line.
-        .with_target(false)
-        // disabling time is handy because CloudWatch will add the ingestion time.
-        .without_time()
-        .init();
-
-    run(service_fn(function_handler)).await
+    create_a_canister().await;
+    Ok(())
+    //tracing_subscriber::fmt()
+    //    .with_max_level(tracing::Level::INFO)
+    //    // disable printing the name of the module in every log line.
+    //    .with_target(false)
+    //    // disabling time is handy because CloudWatch will add the ingestion time.
+    //    .without_time()
+    //    .init();
+    //
+    //run(service_fn(function_handler)).await
 }
