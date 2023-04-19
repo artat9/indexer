@@ -1,0 +1,13 @@
+indexer/node_modules
+indexer/.dfx
+indexer/dist
+indexer/src/declarations
+indexer/target
+infrastructure/cdk.out
+infrastructure/bin
+infrastructure/lib
+infrastructure/node_modules
+infrastructure/test
+ic-web3/examples
+ic-web3/.github
+

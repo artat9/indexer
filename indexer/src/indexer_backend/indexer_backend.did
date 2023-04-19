@@ -5,6 +5,16 @@ type HttpResponse = record {
     headers : vec HttpHeader;
 };
 type TransformArgs = record { context : vec nat8; response : HttpResponse };
+
+type Event = record {
+    recipient : text;
+    hash : text;
+    block_number : nat64;
+    params : vec record { text; text };
+};
+
 service : {
-    "event_amount" : (int) -> (int) query;
+    "latest_block_number" : () -> (nat64) query;
+    "update" : () -> () oneway;
+    "getEventsByBlockNumber" : (nat64) -> (vec Event) query;
 };

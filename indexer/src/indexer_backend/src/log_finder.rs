@@ -11,8 +11,7 @@ use ic_web3::Transport;
 use ic_web3::Web3;
 use ic_web3::{contract::Contract, types::Address};
 
-const WS_ENDPOINT: &str = "https://mainnet.infura.io/v3/";
-const BATCH_SIZE: u64 = 10;
+const HTTP_ENDPOINT: &str = "https://mainnet.infura.io/v3/TEST";
 
 pub struct LogFinder {
     web3: Web3<ICHttp>,
@@ -77,7 +76,7 @@ impl LogFinder {
 }
 
 pub fn http_client() -> Result<Web3<ICHttp>, String> {
-    match ICHttp::new(WS_ENDPOINT, None) {
+    match ICHttp::new(HTTP_ENDPOINT, None) {
         Ok(v) => Ok(Web3::new(v)),
         Err(e) => Err(format!("init web3 failed:{}", e)),
     }
