@@ -1,17 +1,18 @@
-use candid::candid_method;
 use candid::CandidType;
-use candid::Principal;
+use candid::Deserialize;
 use ic_cdk::api::management_canister::http_request::{HttpResponse, TransformArgs};
 use ic_cdk_macros::query;
 use ic_web3::types::Address;
 use log_finder::{contract, http_client, LogFinder};
 mod log_finder;
+use ic_cdk::export::candid::{candid_method, export_service};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ops::Add;
 use std::str::FromStr;
-#[derive(CandidType, Clone)]
+
+#[derive(CandidType, Clone, Deserialize, Debug)]
 pub struct Event {
     //from: Address,
     pub recipient: String,
@@ -21,9 +22,16 @@ pub struct Event {
     pub params: HashMap<String, String>,
 }
 thread_local! {
-static  SAVED_BLOCK:RefCell<u64> = RefCell::new(17078925);
-static  EVENTS_MAP: RefCell<BTreeMap<u64, Vec<Event>>> = RefCell::new(BTreeMap::new());
+    static  SAVED_BLOCK:RefCell<u64> = RefCell::new(17078925);
+    static  EVENTS_MAP: RefCell<BTreeMap<u64, Vec<Event>>> = RefCell::new(BTreeMap::new());
 }
+
+#[query(name = "__get_candid_interface_tmp_hack")]
+fn export_candid() -> String {
+    export_service!();
+    __export_service()
+}
+
 #[query]
 fn latest_block_number() -> u64 {
     SAVED_BLOCK.with(|f| f.borrow().to_owned())
@@ -117,6 +125,8 @@ async fn save_logs_from_to(from: u64, to: u64) -> Result<String, String> {
                 .map(|param| (param.name.clone(), param.value.to_string()))
                 .collect(),
         };
+        ic_cdk::println!("{:?}", event.block_number);
+        ic_cdk::println!("{:?}", event);
         // insert event into EVENTS_MAP
         EVENTS_MAP.with(|e| {
             e.borrow_mut()

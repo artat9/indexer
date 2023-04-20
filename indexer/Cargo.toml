@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "src/indexer_backend",
+    "src/indexer",
+    "src/mapping",
 ]

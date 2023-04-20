@@ -727,7 +727,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexer_backend"
+name = "indexer"
 version = "0.1.0"
 dependencies = [
  "candid",
@@ -737,6 +737,7 @@ dependencies = [
  "ic-cdk-timers",
  "ic-web3",
  "instant",
+ "serde",
  "serde_json",
  "wasm-bindgen",
 ]
@@ -967,6 +968,16 @@ dependencies = [
  "quote",
  "regex-syntax",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "mapping"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "ic-cdk 0.6.10",
+ "ic-cdk-macros",
+ "serde",
 ]
 
 [[package]]

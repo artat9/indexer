@@ -13,7 +13,7 @@ type Event = record {
     params : vec record { text; text };
 };
 
-service : {
+service Indexer : {
     "latest_block_number" : () -> (nat64) query;
     "update" : () -> () oneway;
     "getEventsByBlockNumber" : (nat64) -> (vec Event) query;

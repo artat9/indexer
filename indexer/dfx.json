@@ -1,9 +1,15 @@
 {
   "canisters": {
-    "indexer_backend": {
-      "candid": "src/indexer_backend/indexer_backend.did",
-      "package": "indexer_backend",
+    "indexer": {
+      "candid": "src/indexer/indexer.did",
+      "package": "indexer",
       "type": "rust"
+    },
+    "mapping": {
+      "candid": "src/mapping/mapping.did",
+      "package": "mapping",
+      "type": "rust",
+      "dependencies": ["indexer"]
     }
   },
   "defaults": {

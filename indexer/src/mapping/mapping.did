@@ -1,0 +1,4 @@
+service : {
+    "greet" : (nat64) -> () oneway;
+
+};
