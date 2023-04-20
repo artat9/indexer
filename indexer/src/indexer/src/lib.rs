@@ -1,5 +1,6 @@
 use candid::CandidType;
 use candid::Deserialize;
+use candid::Nat;
 use ic_cdk::api::management_canister::http_request::{HttpResponse, TransformArgs};
 use ic_cdk_macros::query;
 use ic_web3::types::Address;
@@ -8,7 +9,6 @@ mod log_finder;
 use ic_cdk::export::candid::{candid_method, export_service};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 use std::ops::Add;
 use std::str::FromStr;
 
@@ -19,7 +19,9 @@ pub struct Event {
     pub hash: String,
     pub at: u64,
     pub block_number: u64,
-    pub params: HashMap<String, String>,
+    pub from: String,
+    pub to: String,
+    pub value: Nat,
 }
 thread_local! {
     static  SAVED_BLOCK:RefCell<u64> = RefCell::new(17078925);
@@ -113,17 +115,38 @@ async fn save_logs_from_to(from: u64, to: u64) -> Result<String, String> {
         .find(from, to)
         .await?;
     results.into_iter().for_each(|result| {
+        let from = result
+            .event
+            .params
+            .iter()
+            .find(|e| e.name.eq(&"from".to_string()))
+            .map(|f| f.value.to_string())
+            .unwrap_or_default();
+        let to = result
+            .event
+            .params
+            .iter()
+            .find(|e| e.name.eq(&"to".to_string()))
+            .map(|f| f.value.to_string())
+            .unwrap_or_default();
+        let value = result
+            .event
+            .params
+            .iter()
+            .find(|e| e.name.eq(&"value".to_string()))
+            .map(|f| f.clone().value.into_uint())
+            .unwrap_or_default()
+            .unwrap_or_default()
+            .as_u128();
+
         let event: Event = Event {
             at: result.log.block_number.unwrap().as_u64(),
             recipient: result.event.params[1].clone().value.to_string(),
             block_number: result.log.block_number.unwrap().as_u64(),
             hash: result.log.transaction_hash.unwrap().to_string(),
-            params: result
-                .event
-                .params
-                .iter()
-                .map(|param| (param.name.clone(), param.value.to_string()))
-                .collect(),
+            from,
+            to,
+            value: Nat::from(value),
         };
         ic_cdk::println!("{:?}", event.block_number);
         ic_cdk::println!("{:?}", event);

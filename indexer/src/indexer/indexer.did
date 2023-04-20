@@ -10,7 +10,9 @@ type Event = record {
     recipient : text;
     hash : text;
     block_number : nat64;
-    params : vec record { text; text };
+    from : text;
+    to : text;
+    value : nat;
 };
 
 service Indexer : {

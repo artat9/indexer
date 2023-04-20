@@ -9,6 +9,8 @@
 
 # dfx temporary files
 .dfx/
+canister_ids.json
+
 
 # generated files
 src/declarations/

@@ -1,4 +1,3 @@
 service : {
-    "greet" : (nat64) -> () oneway;
-
+    "get_account_balance" : (text) -> (nat) query;
 };

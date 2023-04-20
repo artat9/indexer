@@ -1,0 +1,6 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./indexer/src/indexer/Cargo.toml",
+        "./indexer/src/mapping/Cargo.toml"
+    ]
+}
