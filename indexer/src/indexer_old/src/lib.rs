@@ -2,7 +2,6 @@ use candid::CandidType;
 use candid::Deserialize;
 use candid::Nat;
 use ic_cdk::api::management_canister::http_request::{HttpResponse, TransformArgs};
-use ic_cdk::update;
 use ic_cdk_macros::query;
 use ic_web3::types::Address;
 use log_finder::{contract, http_client, LogFinder};
@@ -27,19 +26,12 @@ pub struct Event {
 thread_local! {
     static  SAVED_BLOCK:RefCell<u64> = RefCell::new(17078925);
     static  EVENTS_MAP: RefCell<BTreeMap<u64, Vec<Event>>> = RefCell::new(BTreeMap::new());
-    static BLOCK_NUMBER_AT_DEPLOY:RefCell<u64> = RefCell::new(0);
 }
 
 #[query(name = "__get_candid_interface_tmp_hack")]
 fn export_candid() -> String {
     export_service!();
     __export_service()
-}
-
-#[query]
-fn block_number_at_deploy() -> u64 {
-    ic_cdk::println!("called block_number_at_deploy");
-    BLOCK_NUMBER_AT_DEPLOY.with(|f| f.borrow().to_owned())
 }
 
 #[query]
@@ -59,22 +51,6 @@ fn get_events_by_block_number(block_number: u64) -> Vec<Event> {
         })
         .to_owned()
         .to_vec()
-}
-
-#[update]
-async fn update_events(block_number: u64, events: Vec<Event>) {
-    EVENTS_MAP.with(|f| {
-        let latest_saved_block = SAVED_BLOCK.with(|f| f.borrow().to_owned());
-        if block_number >= latest_saved_block {
-            return;
-        }
-        let mut map = f.borrow_mut();
-        map.insert(block_number, events);
-        SAVED_BLOCK.with(|f| {
-            let mut saved_block = f.borrow_mut();
-            *saved_block = block_number;
-        });
-    });
 }
 
 #[query(name = "transform")]
@@ -115,26 +91,9 @@ const ERC20_ABI: &[u8] = include_bytes!("./abis/erc20.abi");
 const EVENT: &str = "Transfer";
 const TOKEN_ADDRESS: &str = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH
 async fn save_logs() -> Result<String, String> {
-    let latest = get_latest_block_number().await;
-    match latest {
-        Ok(latest) => {
-            BLOCK_NUMBER_AT_DEPLOY.with(|f| {
-                let mut saved = f.borrow_mut();
-                *saved = latest;
-            });
-        }
-        Err(e) => {
-            ic_cdk::trap(&format!("get latest block number error: {:?}", e));
-        }
-    };
     let saved = SAVED_BLOCK.with(|f| f.borrow().to_owned());
     let latest = get_latest_block_number().await?;
-
     if saved.ge(&latest) {
-        return Ok("".to_string());
-    }
-    let block_number_at_deploy = BLOCK_NUMBER_AT_DEPLOY.with(|f| f.borrow().to_owned());
-    if saved.lt(&block_number_at_deploy) {
         return Ok("".to_string());
     }
     let next: u64 = saved.add(5);

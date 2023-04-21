@@ -13,13 +13,10 @@ type Event = record {
     from : text;
     to : text;
     value : nat;
-    at : nat64;
 };
 
 service Indexer : {
     "latest_block_number" : () -> (nat64) query;
     "update" : () -> () oneway;
     "getEventsByBlockNumber" : (nat64) -> (vec Event) query;
-    "block_number_at_deploy" : () -> (nat64) query;
-    "update_events" : (nat64, vec Event) -> () oneway;
 };

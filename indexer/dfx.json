@@ -3,13 +3,19 @@
     "indexer": {
       "candid": "src/indexer/indexer.did",
       "package": "indexer",
-      "type": "rust"
+      "type": "rust",
+      "declarations": {
+        "node_compatibility": true
+      }
     },
     "mapping": {
       "candid": "src/mapping/mapping.did",
       "package": "mapping",
       "type": "rust",
-      "dependencies": ["indexer"]
+      "dependencies": ["indexer"],
+      "declarations": {
+        "node_compatibility": true
+      }
     }
   },
   "defaults": {
@@ -24,7 +30,7 @@
     },
     "mainnet": {
       "providers": ["https://ic0.app"],
-      "wallet": "iwa44-kqaaa-aaaal-acfbq-cai"
+      "wallet": "un5zb-naaaa-aaaap-qbbla-cai"
     }
   },
   "version": 1

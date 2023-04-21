@@ -2,6 +2,7 @@ use candid::CandidType;
 use candid::Deserialize;
 use candid::Nat;
 use candid::Principal;
+use ic_cdk::api::call::RejectionCode;
 use ic_cdk::api::call::{self, CallResult};
 use ic_cdk::query;
 use ic_cdk::update;
@@ -20,13 +21,26 @@ pub struct Event {
     pub to: String,
     pub value: Nat,
 }
+
+#[derive(candid::CandidType, Debug, Clone, Deserialize)]
+pub struct BalanceUpdateEvent {
+    pub block_number: u64,
+    pub account: String,
+    pub balance_after: Balance,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct Subscriber {
+    topic: String,
+}
+
 type Balance = Nat;
 type SubscriberStore = BTreeMap<Principal, Subscriber>;
 
 thread_local! {
     static  SAVED_BLOCK:RefCell<u64> = RefCell::new(17078925);
     static ACCOUNT_BALANCES: RefCell<BTreeMap<String, Balance>> = RefCell::new(BTreeMap::new());
-    static SUBSCRIBERS: RefCell<Vec<String>> = RefCell::new(Vec::new());
+    static SUBSCRIBERS: RefCell<BTreeMap<Principal,Subscriber>> = RefCell::new(BTreeMap::new());
 }
 
 #[query]
@@ -39,12 +53,6 @@ fn get_account_balance(account: String) -> Balance {
         }
     })
 }
-
-#[derive(Clone, Debug, CandidType, Deserialize)]
-struct Subscriber {
-    topic: String,
-}
-
 #[ic_cdk_macros::post_upgrade]
 fn post_upgrade() {
     init()
@@ -52,15 +60,53 @@ fn post_upgrade() {
 #[ic_cdk_macros::init]
 fn init() {
     let interval = std::time::Duration::from_secs(5);
-    ic_cdk_timers::set_timer_interval(interval, || {
-        ic_cdk::spawn(async {
-            let result = udpate_balances().await;
-            match result {
-                Ok(_) => {}
-                Err(e) => {}
-            }
-        })
+    //ic_cdk_timers::set_timer_interval(interval, || {
+    //    ic_cdk::spawn(async {
+    //        let result = udpate_balances().await;
+    //        match result {
+    //            Ok(_) => {}
+    //            Err(e) => {}
+    //        }
+    //    })
+    //});
+}
+
+#[update]
+fn subscribe(subscriber: Subscriber) -> bool {
+    let subscriber_principal_id = ic_cdk::caller();
+    SUBSCRIBERS.with(|f| {
+        let mut store = f.borrow_mut();
+        if !store.contains_key(&subscriber_principal_id) {
+            store.insert(subscriber_principal_id, subscriber);
+        }
     });
+    true
+}
+
+async fn pub_task(
+    principal: Principal,
+    event: BalanceUpdateEvent,
+) -> Result<(), (RejectionCode, String)> {
+    let res: CallResult<(BalanceUpdateEvent,)> =
+        call::call(principal, "on_update", (&event,)).await;
+    match res {
+        Ok(_) => Ok(()),
+        Err((c, s)) => Err((c, s)),
+    }
+}
+
+async fn publish(events: Vec<BalanceUpdateEvent>) -> bool {
+    let mut tasks = Vec::new();
+    SUBSCRIBERS.with(|f| {
+        for (k, v) in f.borrow().iter() {
+            for event in events.clone() {
+                let future = pub_task(k.to_owned(), event);
+                tasks.push(future)
+            }
+        }
+    });
+    futures::future::join_all(tasks).await;
+    true
 }
 
 async fn udpate_balances() -> Result<String, String> {
@@ -73,13 +119,13 @@ async fn udpate_balances() -> Result<String, String> {
 }
 
 async fn update_account_balance(block_num: u64) -> Result<String, String> {
-    let target = Principal::from_str("ryjl3-tyaaa-aaaaa-aaaba-cai").unwrap();
+    let target = Principal::from_str("r7inp-6aaaa-aaaaa-aaabq-cai").unwrap();
 
     let result: CallResult<(Vec<Event>,)> =
         call::call(target, "getEventsByBlockNumber", (block_num,)).await;
     match result {
         Ok((events,)) => {
-            events.into_iter().for_each(|event| {
+            events.into_iter().map(|event| {
                 update_balance(event);
             });
             Ok(("").to_string())
