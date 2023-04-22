@@ -224,6 +224,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "serde",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -731,6 +739,7 @@ name = "indexer"
 version = "0.1.0"
 dependencies = [
  "candid",
+ "common",
  "hex-literal",
  "ic-cdk 0.6.10",
  "ic-cdk-macros",
@@ -975,6 +984,7 @@ name = "mapping"
 version = "0.1.0"
 dependencies = [
  "candid",
+ "common",
  "futures",
  "ic-cdk 0.6.10",
  "ic-cdk-macros",

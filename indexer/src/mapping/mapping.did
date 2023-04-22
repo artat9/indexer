@@ -1,3 +1,14 @@
+type TransferEvent = record {
+    hash : text;
+    block_number : nat64;
+    from : text;
+    to : text;
+    value : nat;
+    at : nat64;
+};
+
 service : {
     "get_account_balance" : (text) -> (nat) query;
+    "on_update" : (vec TransferEvent) -> () oneway;
+    "subscribe_transfer_event" : (text) -> () oneway;
 };

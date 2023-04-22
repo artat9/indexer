@@ -19,3 +19,4 @@ instant = "0.1"
 wasm-bindgen = { version = "0.2.68", optional = true, features = ["serde-serialize"] }
 ic-cdk-timers = "0.1.2"
 serde = "1.0.160"
+common = {path = "../common"}

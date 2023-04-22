@@ -6,8 +6,7 @@ type HttpResponse = record {
 };
 type TransformArgs = record { context : vec nat8; response : HttpResponse };
 
-type Event = record {
-    recipient : text;
+type TransferEvent = record {
     hash : text;
     block_number : nat64;
     from : text;
@@ -19,7 +18,8 @@ type Event = record {
 service Indexer : {
     "latest_block_number" : () -> (nat64) query;
     "update" : () -> () oneway;
-    "getEventsByBlockNumber" : (nat64) -> (vec Event) query;
+    "getEventsByBlockNumber" : (nat64) -> (vec TransferEvent) query;
     "block_number_at_deploy" : () -> (nat64) query;
-    "update_events" : (nat64, vec Event) -> () oneway;
+    "update_events" : (vec record { nat64; vec TransferEvent }) -> () oneway;
+    "subscribe" : () -> () oneway;
 };
