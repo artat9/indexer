@@ -5,12 +5,11 @@ use candid::Principal;
 use common::abi::ERC20_ABI;
 use common::indexing::IndexingConfig;
 use common::types::TransferEvent;
-use ic_cdk::api::call::RejectionCode;
+use ic_cdk::api::call::CallResult;
 use ic_cdk::api::management_canister::http_request::{HttpResponse, TransformArgs};
 use ic_cdk::update;
 use ic_cdk_macros::query;
 use ic_web3::types::Address;
-use ic_web3::types::Res;
 use log_finder::{contract, http_client, LogFinder};
 mod log_finder;
 use ic_cdk::export::candid::{candid_method, export_service};
@@ -33,23 +32,26 @@ struct Profile {
     config: IndexingConfig,
 }
 
+#[query]
+fn subscribers() -> Vec<Principal> {
+    SUBSCRIBER_STORE.with(|f| f.borrow().to_owned())
+}
+
 #[update]
-fn subscribe() -> bool {
-    let subscriber_principal_id = ic_cdk::caller();
-    let mut subscriber_store = SUBSCRIBER_STORE.with(|f| f.borrow().to_owned());
-    if !subscriber_store.contains(&subscriber_principal_id) {
-        subscriber_store.push(subscriber_principal_id);
-    }
-    true
+fn subscribe() {
+    SUBSCRIBER_STORE.with(|f| f.borrow_mut().push(ic_cdk::caller()))
 }
 
 async fn publish(events: Vec<TransferEvent>) -> bool {
     let store = SUBSCRIBER_STORE.with(|f| f.borrow().to_owned());
     for subscriber in store {
-        let result: Result<(), (RejectionCode, String)> =
+        let result: CallResult<()> =
             ic_cdk::api::call::call(subscriber, "on_update", (&events,)).await;
+
         match result {
-            Ok(_) => {}
+            Ok(_) => {
+                ic_cdk::println!("[indexer] called subscribe");
+            }
             Err(e) => {
                 ic_cdk::println!("error calling subscriber: {:?}", e);
             }
@@ -94,7 +96,7 @@ fn get_events_by_block_number(block_number: u64) -> Vec<TransferEvent> {
 #[update]
 async fn update_events(events: HashMap<u64, Vec<TransferEvent>>) {
     ic_cdk::println!("update events invoked: blocks: {}", events.len());
-    let mut store = EVENTS_STORE.with(|f| f.borrow().to_owned());
+    let mut store = EVENTS_STORE.with(|f| f.borrow_mut().to_owned());
     let latest_saved_block = SAVED_BLOCK.with(|f| f.borrow().to_owned());
     events
         .iter()

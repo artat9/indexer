@@ -10,3 +10,4 @@ pub struct TransferEvent {
     pub to: String,
     pub value: Nat,
 }
+pub type Balance = Nat;

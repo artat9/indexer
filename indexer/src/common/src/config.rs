@@ -31,7 +31,7 @@ impl Token {
             }
         }
     }
-    pub fn deployed_block(&self, network: &SupportedNetwork) -> u64 {
+    pub fn contract_craeted_block_number(&self, network: &SupportedNetwork) -> u64 {
         match (self, network) {
             (Token::DAI, SupportedNetwork::Mainnet) => 8928158,
             (Token::DAI, SupportedNetwork::Optimism) => 0,

@@ -22,4 +22,5 @@ service Indexer : {
     "block_number_at_deploy" : () -> (nat64) query;
     "update_events" : (vec record { nat64; vec TransferEvent }) -> () oneway;
     "subscribe" : () -> () oneway;
+    "subscribers" : () -> (vec principal) query;
 };

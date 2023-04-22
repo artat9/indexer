@@ -2,14 +2,13 @@ use candid::CandidType;
 use candid::Deserialize;
 use candid::Nat;
 use candid::Principal;
+use common::types::Balance;
 use common::types::TransferEvent;
-use ic_cdk::api::call::RejectionCode;
-use ic_cdk::api::call::{self, CallResult};
+use ic_cdk::api::call::CallResult;
 use ic_cdk::query;
 use ic_cdk::update;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::str::FromStr;
 
 #[derive(candid::CandidType, Debug, Clone, Deserialize)]
 pub struct BalanceUpdateEvent {
@@ -22,8 +21,6 @@ pub struct BalanceUpdateEvent {
 struct Subscriber {
     topic: String,
 }
-
-type Balance = Nat;
 
 thread_local! {
     static ACCOUNT_BALANCES: RefCell<BTreeMap<String, Balance>> = RefCell::new(BTreeMap::new());
@@ -41,12 +38,34 @@ fn get_account_balance(account: String) -> Balance {
     })
 }
 
+#[query]
+fn get_account_balances() -> BTreeMap<String, Balance> {
+    ACCOUNT_BALANCES.with(|f| f.borrow().to_owned())
+}
+
+#[query]
+fn balances_top_n(n: u64) -> Vec<(String, Balance)> {
+    let mut balances_vec: Vec<(String, Balance)> = ACCOUNT_BALANCES
+        .with(|f| f.borrow().to_owned())
+        .into_iter()
+        .collect();
+    balances_vec.sort_by(|a, b| b.1.cmp(&a.1));
+    balances_vec.truncate(n as usize);
+    balances_vec
+}
+
 #[update]
 async fn subscribe_transfer_event(canister_id: String) {
-    let result: Result<(), (RejectionCode, String)> =
-        ic_cdk::api::call::call(Principal::from_text(canister_id).unwrap(), "subscribe", ()).await;
+    let result: CallResult<()> = ic_cdk::api::call::call(
+        Principal::from_text(canister_id.clone()).unwrap(),
+        "subscribe",
+        (),
+    )
+    .await;
     match result {
-        Ok(_) => {}
+        Ok(_) => {
+            ic_cdk::println!("subscriptioin ok");
+        }
         Err(e) => {
             ic_cdk::println!("error calling subscriber: {:?}", e);
         }
@@ -58,44 +77,6 @@ async fn on_update(eventes: Vec<TransferEvent>) {
     eventes.iter().for_each(|event| {
         update_balance(event.clone());
     });
-}
-
-#[update]
-fn subscribe(subscriber: Subscriber) -> bool {
-    let subscriber_principal_id = ic_cdk::caller();
-    SUBSCRIBERS.with(|f| {
-        let mut store = f.borrow_mut();
-        if !store.contains_key(&subscriber_principal_id) {
-            store.insert(subscriber_principal_id, subscriber);
-        }
-    });
-    true
-}
-
-async fn pub_task(
-    principal: Principal,
-    event: BalanceUpdateEvent,
-) -> Result<(), (RejectionCode, String)> {
-    let res: CallResult<(BalanceUpdateEvent,)> =
-        call::call(principal, "on_update", (&event,)).await;
-    match res {
-        Ok(_) => Ok(()),
-        Err((c, s)) => Err((c, s)),
-    }
-}
-
-async fn publish(events: Vec<BalanceUpdateEvent>) -> bool {
-    let mut tasks = Vec::new();
-    SUBSCRIBERS.with(|f| {
-        for (k, v) in f.borrow().iter() {
-            for event in events.clone() {
-                let future = pub_task(k.to_owned(), event);
-                tasks.push(future)
-            }
-        }
-    });
-    futures::future::join_all(tasks).await;
-    true
 }
 
 fn update_balance(event: TransferEvent) {

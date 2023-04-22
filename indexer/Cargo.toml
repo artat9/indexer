@@ -2,4 +2,5 @@
 members = [
     "src/indexer",
     "src/mapping",
+    "src/hhi",
 ]

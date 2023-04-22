@@ -1,0 +1,3 @@
+service : {
+    "hhi_of_top_n" : (text, nat64) -> (nat);
+};

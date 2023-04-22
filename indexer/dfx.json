@@ -16,6 +16,15 @@
       "declarations": {
         "node_compatibility": true
       }
+    },
+    "hhi": {
+      "candid": "src/hhi/hhi.did",
+      "package": "hhi",
+      "type": "rust",
+      "dependencies": ["mapping"],
+      "declarations": {
+        "node_compatibility": true
+      }
     }
   },
   "defaults": {

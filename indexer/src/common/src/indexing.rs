@@ -31,6 +31,6 @@ impl IndexingConfig {
     }
 
     pub fn deployed_block(&self) -> u64 {
-        self.token.deployed_block(&self.network)
+        self.token.contract_craeted_block_number(&self.network)
     }
 }
